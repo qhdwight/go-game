@@ -31,22 +31,7 @@ func main() {
 		panic(err)
 	}
 	defer glfw.Terminate()
-	player := player{pos: mgl64.Vec3{4, 3, 0}}
-	projMat := mgl64.Perspective(mgl64.DegToRad(60), width/height, 0.1, 100)
-	dir := mgl64.Vec3{
-		math.Cos(player.xRot) * math.Sin(player.yRot),
-		math.Sin(player.xRot),
-		math.Cos(player.xRot) * math.Cos(player.yRot),
-	}
-	right := mgl64.Vec3{
-		math.Sin(player.xRot - math.Pi/2),
-		0,
-		math.Cos(player.xRot - math.Pi/2),
-	}
-	up := right.Cross(dir)
-	viewMat := mgl64.LookAtV(player.pos, dir, up)
-	modelMat := mgl64.Ident4()
-	mvpMat := projMat.Mul4(viewMat.Mul4(modelMat))
+	player := player{pos: mgl64.Vec3{4, 3, 3}}
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 6)
@@ -58,13 +43,15 @@ func main() {
 		panic(err)
 	}
 	window.MakeContextCurrent()
+	window.SetInputMode(glfw.StickyKeysMode, gl.TRUE)
+	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
 	triangles := []float32{
-		0, 0.5, 0,
-		-0.5, -0.5, 0,
-		0.5, -0.5, 0,
+		0, 0.8, 0,
+		-0.8, -0.8, 0,
+		0.8, -0.8, 0,
 	}
 	vertShaderSource, err := readShaderSource("resources/shaders/triangle.vert")
 	if err != nil {
@@ -89,7 +76,11 @@ func main() {
 	gl.LinkProgram(prog)
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-
+	mvpUniform, err := getUniformLocation("mvp", prog)
+	if err != nil {
+		panic(err)
+	}
+	projMat := mgl64.Perspective(mgl64.DegToRad(60), width/height, 0.1, 100)
 	lastRenderTime := 0.0
 	for !window.ShouldClose() {
 		if window.GetKey(glfw.KeyEscape) == glfw.Press {
@@ -98,10 +89,21 @@ func main() {
 		now := glfw.GetTime()
 		delta := lastRenderTime - now
 		lastRenderTime = now
-		//mouseX, mouseY = window.GetCursorPos()
+		//mouseX, mouseY := window.GetCursorPos()
 		//window.SetCursorPos(width / 2.0, height / 2.0)
 		//player.xRot += width / 2.0 - mouseX
 		//player.yRot += height / 2.0 - mouseY
+		dir := mgl64.Vec3{
+			math.Cos(player.xRot) * math.Sin(player.yRot),
+			math.Sin(player.xRot),
+			math.Cos(player.xRot) * math.Cos(player.yRot),
+		}
+		right := mgl64.Vec3{
+			math.Sin(player.xRot - math.Pi/2),
+			0,
+			math.Cos(player.xRot - math.Pi/2),
+		}
+		up := right.Cross(dir)
 		if window.GetKey(glfw.KeyUp) == glfw.Press {
 			player.pos.Add(dir.Mul(delta))
 		}
@@ -114,17 +116,19 @@ func main() {
 		if window.GetKey(glfw.KeyLeft) == glfw.Press {
 			player.pos.Sub(right.Mul(delta))
 		}
+		viewMat := mgl64.LookAtV(player.pos, mgl64.Vec3{0, 0, 0}, up)
+		modelMat := mgl64.Ident4()
+		mvpMat := projMat.Mul4(viewMat).Mul4(modelMat)
 		var mvpMat32 mgl32.Mat4
 		//for i, f64 := range mvpMat {
 		//	mvpMat32[i] = float32(f64)
 		//}
 		for i := 0; i < 16; i++ {
 			mvpMat32[i] = float32(mvpMat[i])
-
 		}
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(prog)
-		gl.UniformMatrix4fv(shaderMvp, 1, false, &mvpMat32[0])
+		gl.UniformMatrix4fv(mvpUniform, 1, false, &mvpMat32[0])
 		gl.BindVertexArray(vao)
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangles)/3))
 		window.SwapBuffers()
@@ -132,8 +136,12 @@ func main() {
 	}
 }
 
-func getUniformLocation(name string) (location, err) {
-
+func getUniformLocation(name string, prog uint32) (int32, error) {
+	location := gl.GetUniformLocation(prog, gl.Str(name + "\x00"))
+	if location == -1 {
+		return -1, fmt.Errorf("Could not find location for uniform: %v", name)
+	}
+	return location, nil
 }
 
 func compileShader(src string, shaderType uint32) (uint32, error) {
