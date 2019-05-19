@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	width  = 640
-	height = 480
+	width       = 640
+	height      = 480
+	sensitivity = 0.005
+	speed       = 3
 )
 
 type player struct {
@@ -34,7 +36,7 @@ func main() {
 	player := player{pos: mgl64.Vec3{4, 3, 3}}
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	glfw.WindowHint(glfw.ContextVersionMinor, 6)
+	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	//glfw.SwapInterval(0)
@@ -49,9 +51,42 @@ func main() {
 		panic(err)
 	}
 	triangles := []float32{
-		0, 0.8, 0,
-		-0.8, -0.8, 0,
-		0.8, -0.8, 0,
+		-1.0, -1.0, -1.0,
+		-1.0, -1.0, 1.0,
+		-1.0, 1.0, 1.0,
+		1.0, 1.0, -1.0,
+		-1.0, -1.0, -1.0,
+		-1.0, 1.0, -1.0,
+		1.0, -1.0, 1.0,
+		-1.0, -1.0, -1.0,
+		1.0, -1.0, -1.0,
+		1.0, 1.0, -1.0,
+		1.0, -1.0, -1.0,
+		-1.0, -1.0, -1.0,
+		-1.0, -1.0, -1.0,
+		-1.0, 1.0, 1.0,
+		-1.0, 1.0, -1.0,
+		1.0, -1.0, 1.0,
+		-1.0, -1.0, 1.0,
+		-1.0, -1.0, -1.0,
+		-1.0, 1.0, 1.0,
+		-1.0, -1.0, 1.0,
+		1.0, -1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, -1.0, -1.0,
+		1.0, 1.0, -1.0,
+		1.0, -1.0, -1.0,
+		1.0, 1.0, 1.0,
+		1.0, -1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, -1.0,
+		-1.0, 1.0, -1.0,
+		1.0, 1.0, 1.0,
+		-1.0, 1.0, -1.0,
+		-1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		-1.0, 1.0, 1.0,
+		1.0, -1.0, 1.0,
 	}
 	vertShaderSource, err := readShaderSource("resources/shaders/triangle.vert")
 	if err != nil {
@@ -80,7 +115,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	projMat := mgl64.Perspective(mgl64.DegToRad(60), width/height, 0.1, 100)
+	projMat := mgl64.Perspective(mgl64.DegToRad(60), float64(width)/height, 0.1, 100)
 	lastRenderTime := 0.0
 	for !window.ShouldClose() {
 		if window.GetKey(glfw.KeyEscape) == glfw.Press {
@@ -89,14 +124,14 @@ func main() {
 		now := glfw.GetTime()
 		delta := lastRenderTime - now
 		lastRenderTime = now
-		//mouseX, mouseY := window.GetCursorPos()
-		//window.SetCursorPos(width / 2.0, height / 2.0)
-		//player.xRot += width / 2.0 - mouseX
-		//player.yRot += height / 2.0 - mouseY
+		mouseX, mouseY := window.GetCursorPos()
+		window.SetCursorPos(width/2.0, height/2.0)
+		player.xRot = math.Mod(player.xRot+(width/2.0-mouseX)*sensitivity, math.Pi*2)
+		player.yRot = mgl64.Clamp(player.yRot-(height/2.0-mouseY)*sensitivity, -math.Pi/2, math.Pi/2)
 		dir := mgl64.Vec3{
-			math.Cos(player.xRot) * math.Sin(player.yRot),
-			math.Sin(player.xRot),
-			math.Cos(player.xRot) * math.Cos(player.yRot),
+			math.Cos(player.yRot) * math.Sin(player.xRot),
+			math.Sin(player.yRot),
+			math.Cos(player.yRot) * math.Cos(player.xRot),
 		}
 		right := mgl64.Vec3{
 			math.Sin(player.xRot - math.Pi/2),
@@ -104,19 +139,19 @@ func main() {
 			math.Cos(player.xRot - math.Pi/2),
 		}
 		up := right.Cross(dir)
-		if window.GetKey(glfw.KeyUp) == glfw.Press {
-			player.pos.Add(dir.Mul(delta))
+		if window.GetKey(glfw.KeyW) == glfw.Press {
+			player.pos = player.pos.Add(dir.Mul(delta * speed))
 		}
-		if window.GetKey(glfw.KeyDown) == glfw.Press {
-			player.pos.Sub(dir.Mul(delta))
+		if window.GetKey(glfw.KeyS) == glfw.Press {
+			player.pos = player.pos.Sub(dir.Mul(delta * speed))
 		}
-		if window.GetKey(glfw.KeyRight) == glfw.Press {
-			player.pos.Add(right.Mul(delta))
+		if window.GetKey(glfw.KeyD) == glfw.Press {
+			player.pos = player.pos.Add(right.Mul(delta * speed))
 		}
-		if window.GetKey(glfw.KeyLeft) == glfw.Press {
-			player.pos.Sub(right.Mul(delta))
+		if window.GetKey(glfw.KeyA) == glfw.Press {
+			player.pos = player.pos.Sub(right.Mul(delta * speed))
 		}
-		viewMat := mgl64.LookAtV(player.pos, mgl64.Vec3{0, 0, 0}, up)
+		viewMat := mgl64.LookAtV(player.pos, player.pos.Sub(dir), up)
 		modelMat := mgl64.Ident4()
 		mvpMat := projMat.Mul4(viewMat).Mul4(modelMat)
 		var mvpMat32 mgl32.Mat4
@@ -137,7 +172,7 @@ func main() {
 }
 
 func getUniformLocation(name string, prog uint32) (int32, error) {
-	location := gl.GetUniformLocation(prog, gl.Str(name + "\x00"))
+	location := gl.GetUniformLocation(prog, gl.Str(name+"\x00"))
 	if location == -1 {
 		return -1, fmt.Errorf("Could not find location for uniform: %v", name)
 	}
