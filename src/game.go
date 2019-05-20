@@ -4,10 +4,10 @@ import (
 	"entities"
 	"graphics"
 	"runtime"
+	"unsafe"
 
 	"github.com/go-gl/gl/v4.6-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 )
 
@@ -17,48 +17,53 @@ const (
 	lookSens = 0.005
 	speed    = 5
 	fov      = 70
-	vertPath = "resources/shaders/basic.vert"
-	fragPath = "resources/shaders/basic.frag"
+	vertPath = "lit.vert"
+	fragPath = "lit.frag"
 )
 
 var (
-	triangles = []float32{
-		-1.0, -1.0, -1.0,
-		-1.0, -1.0, 1.0,
-		-1.0, 1.0, 1.0,
-		1.0, 1.0, -1.0,
-		-1.0, -1.0, -1.0,
-		-1.0, 1.0, -1.0,
-		1.0, -1.0, 1.0,
-		-1.0, -1.0, -1.0,
-		1.0, -1.0, -1.0,
-		1.0, 1.0, -1.0,
-		1.0, -1.0, -1.0,
-		-1.0, -1.0, -1.0,
-		-1.0, -1.0, -1.0,
-		-1.0, 1.0, 1.0,
-		-1.0, 1.0, -1.0,
-		1.0, -1.0, 1.0,
-		-1.0, -1.0, 1.0,
-		-1.0, -1.0, -1.0,
-		-1.0, 1.0, 1.0,
-		-1.0, -1.0, 1.0,
-		1.0, -1.0, 1.0,
-		1.0, 1.0, 1.0,
-		1.0, -1.0, -1.0,
-		1.0, 1.0, -1.0,
-		1.0, -1.0, -1.0,
-		1.0, 1.0, 1.0,
-		1.0, -1.0, 1.0,
-		1.0, 1.0, 1.0,
-		1.0, 1.0, -1.0,
-		-1.0, 1.0, -1.0,
-		1.0, 1.0, 1.0,
-		-1.0, 1.0, -1.0,
-		-1.0, 1.0, 1.0,
-		1.0, 1.0, 1.0,
-		-1.0, 1.0, 1.0,
-		1.0, -1.0, 1.0,
+	cube = []float32{
+		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+		0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+		-0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+		0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+		-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+
+		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
+		-0.5, 0.5, -0.5, -1.0, 0.0, 0.0,
+		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
+		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
+		-0.5, -0.5, 0.5, -1.0, 0.0, 0.0,
+		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
+
+		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+		0.5, 0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, 0.5, 1.0, 0.0, 0.0,
+		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+
+		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+		0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+		-0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+
+		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
 	}
 )
 
@@ -78,15 +83,19 @@ func main() {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
-	vbo, vao := makeVao(triangles)
-	defer gl.DeleteVertexArrays(1, &vao)
-	defer gl.DeleteBuffers(1, &vbo)
-	vertShader, err := graphics.CompileShaderFromSource(vertPath, gl.VERTEX_SHADER)
+	makeBuffer(cube)
+	vertArray := makeVertexArray()
+	normArray := makeVertexArray()
+	bindVertexArrayToBuffer(0, 6*4, nil)
+	bindVertexArrayToBuffer(1, 6*4, gl.PtrOffset(3*4))
+	//defer gl.DeleteVertexArrays(1, &vao)
+	//defer gl.DeleteBuffers(1, &vbo)
+	vertShader, err := graphics.CompileShaderFromPath(vertPath, gl.VERTEX_SHADER)
 	if err != nil {
 		panic(err)
 	}
 	defer gl.DeleteShader(vertShader.Handle)
-	fragShader, err := graphics.CompileShaderFromSource(fragPath, gl.FRAGMENT_SHADER)
+	fragShader, err := graphics.CompileShaderFromPath(fragPath, gl.FRAGMENT_SHADER)
 	if err != nil {
 		panic(err)
 	}
@@ -98,10 +107,13 @@ func main() {
 	defer gl.DeleteProgram(prog.Handle)
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	mvpUniform, err := graphics.GetUniformLocation("mvp", prog.Handle)
-	if err != nil {
-		panic(err)
-	}
+	modelUniform, err := prog.GetUniformLocation("model")
+	viewUniform, err := prog.GetUniformLocation("view")
+	projUniform, err := prog.GetUniformLocation("projection")
+	lightPosUniform, err := prog.GetUniformLocation("lightPos")
+	viewPosUniform, err := prog.GetUniformLocation("viewPos")
+	lightColorUniform, err := prog.GetUniformLocation("lightColor")
+	objectColorUniform, err := prog.GetUniformLocation("objectColor")
 	player := entities.Player{Entity: entities.Entity{Pos: mgl64.Vec3{4, 3, 3}}}
 	cam := graphics.MakeCamera(fov, width, height)
 	lastRenderTime := 0.0
@@ -130,19 +142,21 @@ func main() {
 		moveOpt(glfw.KeyLeftControl, worldUp.Mul(-1))
 		viewMat := mgl64.LookAtV(player.Entity.Pos, player.Entity.Pos.Add(fwd), up)
 		modelMat := mgl64.Ident4()
-		mvpMat := cam.ProjMat.Mul4(viewMat).Mul4(modelMat)
-		var mvpMat32 mgl32.Mat4
-		//for i, f64 := range mvpMat {
-		//	mvpMat32[i] = float32(f64)
-		//}
-		for i := 0; i < 16; i++ {
-			mvpMat32[i] = float32(mvpMat[i])
-		}
+		projMat32 := graphics.Mat64to32(cam.ProjMat)
+		viewMat32 := graphics.Mat64to32(viewMat)
+		modelMat32 := graphics.Mat64to32(modelMat)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(prog.Handle)
-		gl.UniformMatrix4fv(mvpUniform, 1, false, &mvpMat32[0])
-		gl.BindVertexArray(vao)
-		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangles)/3))
+		gl.UniformMatrix4fv(projUniform, 1, false, &projMat32[0])
+		gl.UniformMatrix4fv(viewUniform, 1, false, &viewMat32[0])
+		gl.UniformMatrix4fv(modelUniform, 1, false, &modelMat32[0])
+		gl.Uniform3f(lightPosUniform, 1.2, 1.4, 1.2)
+		gl.Uniform3f(viewPosUniform, (float32)(player.Entity.Pos.X()), (float32)(player.Entity.Pos.Y()), (float32)(player.Entity.Pos.Z()))
+		gl.Uniform3f(lightColorUniform, 1, 1, 1)
+		gl.Uniform3f(objectColorUniform, 1, 0.2, 0.2)
+		gl.BindVertexArray(vertArray)
+		gl.BindVertexArray(normArray)
+		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(cube)/3))
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
@@ -172,16 +186,22 @@ func initWindow() (*glfw.Window, error) {
 	return window, nil
 }
 
-func makeVao(points []float32) (uint32, uint32) {
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(points), gl.Ptr(points), gl.STATIC_DRAW)
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-	gl.EnableVertexAttribArray(0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
-	return vbo, vao
+func makeBuffer(data []float32) uint32 {
+	var buffer uint32
+	gl.GenBuffers(1, &buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.BufferData(gl.ARRAY_BUFFER, 4*len(data), gl.Ptr(data), gl.STATIC_DRAW)
+	return buffer
+}
+
+func makeVertexArray() uint32 {
+	var vertexArray uint32
+	gl.GenVertexArrays(1, &vertexArray)
+	gl.BindVertexArray(vertexArray)
+	return vertexArray
+}
+
+func bindVertexArrayToBuffer(index uint32, stride int32, pointer unsafe.Pointer) {
+	gl.VertexAttribPointer(index, 3, gl.FLOAT, false, stride, pointer)
+	gl.EnableVertexAttribArray(index)
 }

@@ -6,6 +6,12 @@ import (
 	"strings"
 
 	"github.com/go-gl/gl/v4.6-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/go-gl/mathgl/mgl64"
+)
+
+const (
+	shaderPath = "resources/shaders/"
 )
 
 type Shader struct {
@@ -39,16 +45,24 @@ func NewProgram(shaders ...*Shader) (*Program, error) {
 	return &program, nil
 }
 
-func CompileShaderFromSource(path string, shaderType uint32) (*Shader, error) {
-	src, err := ioutil.ReadFile(path)
+func CompileShaderFromPath(path string, shaderType uint32) (*Shader, error) {
+	src, err := ioutil.ReadFile(shaderPath + path)
 	if err != nil {
 		return nil, err
 	}
 	return compileShader(string(src), shaderType)
 }
 
-func GetUniformLocation(name string, prog uint32) (int32, error) {
-	location := gl.GetUniformLocation(prog, gl.Str(name+"\x00"))
+func Mat64to32(mat64 mgl64.Mat4) mgl32.Mat4 {
+	var mat32 mgl32.Mat4
+	for i, f64 := range mat64 {
+		mat32[i] = float32(f64)
+	}
+	return mat32
+}
+
+func (shader *Program) GetUniformLocation(name string) (int32, error) {
+	location := gl.GetUniformLocation(shader.Handle, gl.Str(name+"\x00"))
 	if location == -1 {
 		return -1, fmt.Errorf("could not find location for uniform: %v", name)
 	}
