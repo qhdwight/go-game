@@ -22,7 +22,7 @@ type Program struct {
 	Handle uint32
 }
 
-func NewProgram(shaders ...*Shader) (*Program, error) {
+func NewProgram(shaders []*Shader) (*Program, error) {
 	handle := gl.CreateProgram()
 	program := Program{Handle: handle}
 	for _, shader := range shaders {
@@ -61,12 +61,30 @@ func Mat64to32(mat64 mgl64.Mat4) mgl32.Mat4 {
 	return mat32
 }
 
-func (shader *Program) GetUniformLocation(name string) (int32, error) {
-	location := gl.GetUniformLocation(shader.Handle, gl.Str(name+"\x00"))
+func Vec64to32(vec64 mgl64.Vec3) mgl32.Vec3 {
+	var vec32 mgl32.Vec3
+	for i, f64 := range vec64 {
+		vec32[i] = float32(f64)
+	}
+	return vec32
+}
+
+func (program *Program) GetUniformLocation(name string) (int32, error) {
+	location := gl.GetUniformLocation(program.Handle, gl.Str(name+"\x00"))
 	if location == -1 {
 		return -1, fmt.Errorf("could not find location for uniform: %v", name)
 	}
 	return location, nil
+}
+
+func SetUniformVec3(location int32, vec mgl64.Vec3) {
+	vec32 := Vec64to32(vec)
+	gl.Uniform3fv(location, 1, &vec32[0])
+}
+
+func SetUniformMat4(location int32, mat mgl64.Mat4) {
+	mat32 := Mat64to32(mat)
+	gl.UniformMatrix4fv(location, 1, false, &mat32[0])
 }
 
 func compileShader(src string, shaderType uint32) (*Shader, error) {

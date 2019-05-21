@@ -2,13 +2,11 @@ package main
 
 import (
 	"entities"
-	"graphics"
-	"runtime"
-	"unsafe"
-
 	"github.com/go-gl/gl/v4.6-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl64"
+	"graphics"
+	"runtime"
 )
 
 const (
@@ -65,6 +63,9 @@ var (
 		-0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
 		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
 	}
+	ents     []*entities.Entity
+	shaders  []*graphics.Shader
+	programs []*graphics.Program
 )
 
 func init() {
@@ -75,7 +76,6 @@ func main() {
 	if err := initGlfw(); err != nil {
 		panic(err)
 	}
-	defer glfw.Terminate()
 	window, err := initWindow()
 	if err != nil {
 		panic(err)
@@ -83,28 +83,20 @@ func main() {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
-	makeBuffer(cube)
-	vertArray := makeVertexArray()
-	normArray := makeVertexArray()
-	bindVertexArrayToBuffer(0, 6*4, nil)
-	bindVertexArrayToBuffer(1, 6*4, gl.PtrOffset(3*4))
 	//defer gl.DeleteVertexArrays(1, &vao)
 	//defer gl.DeleteBuffers(1, &vbo)
-	vertShader, err := graphics.CompileShaderFromPath(vertPath, gl.VERTEX_SHADER)
+	vertShader, err := newShader(vertPath, gl.VERTEX_SHADER)
 	if err != nil {
 		panic(err)
 	}
-	defer gl.DeleteShader(vertShader.Handle)
-	fragShader, err := graphics.CompileShaderFromPath(fragPath, gl.FRAGMENT_SHADER)
+	fragShader, err := newShader(fragPath, gl.FRAGMENT_SHADER)
 	if err != nil {
 		panic(err)
 	}
-	defer gl.DeleteShader(fragShader.Handle)
-	prog, err := graphics.NewProgram(vertShader, fragShader)
+	prog, err := newProgram(vertShader, fragShader)
 	if err != nil {
 		panic(err)
 	}
-	defer gl.DeleteProgram(prog.Handle)
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
 	modelUniform, err := prog.GetUniformLocation("model")
@@ -114,7 +106,8 @@ func main() {
 	viewPosUniform, err := prog.GetUniformLocation("viewPos")
 	lightColorUniform, err := prog.GetUniformLocation("lightColor")
 	objectColorUniform, err := prog.GetUniformLocation("objectColor")
-	player := entities.Player{Entity: entities.Entity{Pos: mgl64.Vec3{4, 3, 3}}}
+	player := entities.Player{VisualEntity: entities.VisualEntity{Entity: entities.Entity{Transform: entities.Transform{Pos: mgl64.Vec3{4, 3, 3}}}}}
+	ents = append(ents, &player.VisualEntity.Entity)
 	cam := graphics.MakeCamera(fov, width, height)
 	lastRenderTime := 0.0
 	for !window.ShouldClose() {
@@ -126,13 +119,15 @@ func main() {
 		lastRenderTime = now
 		mouseX, mouseY := window.GetCursorPos()
 		window.SetCursorPos(width/2.0, height/2.0)
-		player.Entity.AddInput((mouseX-width/2.0)*lookSens, (height/2.0-mouseY)*lookSens)
-		fwd, right, up := entities.CalcRelVecs(player.Entity.Pitch, player.Entity.Yaw)
+		player.VisualEntity.Entity.AddInput((mouseX-width/2.0)*lookSens, (height/2.0-mouseY)*lookSens)
+		transform := &player.VisualEntity.Transform
+		fwd, right, up := entities.CalcRelVecs(transform.Pitch, transform.Yaw)
 		moveOpt := func(key glfw.Key, vec mgl64.Vec3) {
 			if window.GetKey(key) == glfw.Press {
-				player.Entity.Pos = player.Entity.Pos.Add(vec.Mul(delta * speed))
+				transform.Pos = transform.Pos.Add(vec.Mul(delta * speed))
 			}
 		}
+		mgl64.HomogRotate3D()
 		moveOpt(glfw.KeyW, fwd)
 		moveOpt(glfw.KeyS, fwd.Mul(-1))
 		moveOpt(glfw.KeyD, right)
@@ -140,26 +135,34 @@ func main() {
 		worldUp := mgl64.Vec3{0, 1, 0}
 		moveOpt(glfw.KeyLeftShift, worldUp)
 		moveOpt(glfw.KeyLeftControl, worldUp.Mul(-1))
-		viewMat := mgl64.LookAtV(player.Entity.Pos, player.Entity.Pos.Add(fwd), up)
+		viewMat := mgl64.LookAtV(transform.Pos, transform.Pos.Add(fwd), up)
 		modelMat := mgl64.Ident4()
-		projMat32 := graphics.Mat64to32(cam.ProjMat)
-		viewMat32 := graphics.Mat64to32(viewMat)
-		modelMat32 := graphics.Mat64to32(modelMat)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(prog.Handle)
-		gl.UniformMatrix4fv(projUniform, 1, false, &projMat32[0])
-		gl.UniformMatrix4fv(viewUniform, 1, false, &viewMat32[0])
-		gl.UniformMatrix4fv(modelUniform, 1, false, &modelMat32[0])
-		gl.Uniform3f(lightPosUniform, 1.2, 1.4, 1.2)
-		gl.Uniform3f(viewPosUniform, (float32)(player.Entity.Pos.X()), (float32)(player.Entity.Pos.Y()), (float32)(player.Entity.Pos.Z()))
-		gl.Uniform3f(lightColorUniform, 1, 1, 1)
-		gl.Uniform3f(objectColorUniform, 1, 0.2, 0.2)
+		graphics.SetUniformMat4(projUniform, cam.ProjMat)
+		graphics.SetUniformMat4(viewUniform, viewMat)
+		graphics.SetUniformMat4(modelUniform, modelMat)
+		graphics.SetUniformVec3(lightPosUniform, mgl64.Vec3{1.3, 1.4, 1.2})
+		graphics.SetUniformVec3(viewPosUniform, transform.Pos)
+		graphics.SetUniformVec3(lightColorUniform, mgl64.Vec3{1, 1, 1})
+		graphics.SetUniformVec3(objectColorUniform, mgl64.Vec3{1, 0.2, 0.2})
 		gl.BindVertexArray(vertArray)
 		gl.BindVertexArray(normArray)
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(cube)/3))
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
+	cleanup()
+}
+
+func cleanup() {
+	for _, shader := range shaders {
+		gl.DeleteShader(shader.Handle)
+	}
+	for _, program := range programs {
+		gl.DeleteProgram(program.Handle)
+	}
+	glfw.Terminate()
 }
 
 func initGlfw() error {
@@ -174,6 +177,24 @@ func initGlfw() error {
 	return nil
 }
 
+func newShader(path string, shaderType uint32) (*graphics.Shader, error) {
+	shader, err := graphics.CompileShaderFromPath(path, shaderType)
+	if err != nil {
+		return nil, err
+	}
+	shaders = append(shaders, shader)
+	return shader, nil
+}
+
+func newProgram(shaders ...*graphics.Shader) (*graphics.Program, error) {
+	program, err := graphics.NewProgram(shaders)
+	if err != nil {
+		return nil, err
+	}
+	programs = append(programs, program)
+	return program, nil
+}
+
 func initWindow() (*glfw.Window, error) {
 	window, err := glfw.CreateWindow(width, height, "test", nil, nil)
 	if err != nil {
@@ -184,24 +205,4 @@ func initWindow() (*glfw.Window, error) {
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 	//glfw.SwapInterval(0)
 	return window, nil
-}
-
-func makeBuffer(data []float32) uint32 {
-	var buffer uint32
-	gl.GenBuffers(1, &buffer)
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(data), gl.Ptr(data), gl.STATIC_DRAW)
-	return buffer
-}
-
-func makeVertexArray() uint32 {
-	var vertexArray uint32
-	gl.GenVertexArrays(1, &vertexArray)
-	gl.BindVertexArray(vertexArray)
-	return vertexArray
-}
-
-func bindVertexArrayToBuffer(index uint32, stride int32, pointer unsafe.Pointer) {
-	gl.VertexAttribPointer(index, 3, gl.FLOAT, false, stride, pointer)
-	gl.EnableVertexAttribArray(index)
 }

@@ -6,13 +6,26 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 )
 
-type Entity struct {
+type Transform struct {
 	Pos        mgl64.Vec3
 	Yaw, Pitch float64
 }
 
+type WorldObject struct {
+}
+
+type Entity struct {
+	Transform   Transform
+	WorldObject WorldObject
+}
+
+type VisualEntity struct {
+	Entity    Entity
+	Transform Transform
+}
+
 type Player struct {
-	Entity Entity
+	VisualEntity VisualEntity
 }
 
 func CalcRelVecs(pitch, yaw float64) (mgl64.Vec3, mgl64.Vec3, mgl64.Vec3) {
@@ -27,6 +40,7 @@ func CalcRelVecs(pitch, yaw float64) (mgl64.Vec3, mgl64.Vec3, mgl64.Vec3) {
 }
 
 func (entity *Entity) AddInput(mouseX, mouseY float64) {
-	entity.Yaw = math.Mod(entity.Yaw+mouseX, math.Pi*2)
-	entity.Pitch = mgl64.Clamp(entity.Pitch+mouseY, -math.Pi/2, math.Pi/2)
+	transform := &entity.Transform
+	transform.Yaw = math.Mod(transform.Yaw+mouseX, math.Pi*2)
+	transform.Pitch = mgl64.Clamp(transform.Pitch+mouseY, -math.Pi/2, math.Pi/2)
 }
