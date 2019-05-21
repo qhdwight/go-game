@@ -1,23 +1,24 @@
 package graphics
 
 import (
-	"unsafe"
-
 	"github.com/go-gl/gl/v4.6-core/gl"
+	"unsafe"
 )
 
 type Model struct {
-	Verts, Norms                     []float32
+	verts, norms                     []float32
 	vertArrayHandle, normArrayHandle uint32
 }
 
-func (model *Model) Init() {
-	vertBufHandle := makeBuffer(model.Verts)
-	normBufHandle := makeBuffer(model.Norms)
+func NewModel(verts, norms []float32) *Model {
+	model := &Model{verts: verts, norms: norms}
+	vertBufHandle := makeBuffer(verts)
+	normBufHandle := makeBuffer(norms)
 	model.vertArrayHandle = makeVertexArray()
 	model.normArrayHandle = makeVertexArray()
 	bindVertexArrayToBuffer(0, vertBufHandle, 0, nil)
 	bindVertexArrayToBuffer(1, normBufHandle, 0, nil)
+	return model
 }
 
 func makeBuffer(data []float32) uint32 {

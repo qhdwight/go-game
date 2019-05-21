@@ -149,11 +149,7 @@ func main() {
 	viewPosUniform, err := prog.GetUniformLocation("viewPos")
 	lightColorUniform, err := prog.GetUniformLocation("lightColor")
 	objectColorUniform, err := prog.GetUniformLocation("objectColor")
-	cubeModel := graphics.Model{
-		Verts: cubeVerts,
-		Norms: cubeNorms,
-	}
-	cubeModel.Init()
+	cubeModel := graphics.NewModel(cubeVerts, cubeNorms)
 	player := entities.Player{
 		VisualEntity: entities.VisualEntity{
 			Entity: entities.Entity{
@@ -168,10 +164,20 @@ func main() {
 			Transform: entities.Transform{
 				Pos: mgl64.Vec3{x, y, z},
 			},
-			Model: &cubeModel,
+			Model: cubeModel,
 		}
 	}
-	cubes := []entities.VisualEntity{makeCube(0, -2, 0), makeCube(2, -3, 1)}
+	const size = 2
+	visuals := [(2*size + 1) * (2*size + 1) * (2*size + 1)]entities.VisualEntity{}
+	i := 0
+	for x := -size; x <= size; x++ {
+		for y := -size; y <= size; y++ {
+			for z := -size; z <= size; z++ {
+				visuals[i] = makeCube(float64(x*2), float64(y*2), float64(z*2))
+				i++
+			}
+		}
+	}
 	ents = append(ents, &player.VisualEntity.Entity)
 	cam := graphics.MakeCamera(fov, width, height)
 	lastRenderTime := 0.0
@@ -205,14 +211,18 @@ func main() {
 		gl.UseProgram(prog.Handle)
 		graphics.SetUniformMat4(projUniform, cam.ProjMat)
 		graphics.SetUniformMat4(viewUniform, viewMat)
-		graphics.SetUniformVec3(lightPosUniform, mgl64.Vec3{math.Cos(time) * 2, math.Sin(time) * math.Cos(time) * 2, math.Sin(time) * 2})
+		cameraPos := mgl64.Vec3{math.Cos(time) * 10, math.Sin(time) * math.Cos(time) * 10, math.Sin(time) * 5}
+		graphics.SetUniformVec3(lightPosUniform, cameraPos)
 		graphics.SetUniformVec3(viewPosUniform, playerTransform.Pos)
 		graphics.SetUniformVec3(lightColorUniform, mgl64.Vec3{1, 1, 1})
 		graphics.SetUniformVec3(objectColorUniform, mgl64.Vec3{1, 0.2, 0.2})
-		for _, cube := range cubes {
-			modelMat := mgl64.Translate3D(cube.Transform.Pos.Elem())
+		visuals[0].Transform.Pos = cameraPos
+		for _, visual := range visuals {
+			translateMat := mgl64.Translate3D(visual.Transform.Pos.Elem())
+			rotMat := mgl64.HomogRotate3DX(visual.Transform.Pitch).Mul4(mgl64.HomogRotate3DY(visual.Transform.Yaw))
+			modelMat := translateMat.Mul4(rotMat)
 			graphics.SetUniformMat4(modelUniform, modelMat)
-			cube.Model.BindVertexArray()
+			visual.Model.BindVertexArray()
 			gl.DrawArrays(gl.TRIANGLES, 0, int32(len(cubeVerts)/3))
 		}
 		window.SwapBuffers()
@@ -269,6 +279,6 @@ func initWindow() (*glfw.Window, error) {
 	window.MakeContextCurrent()
 	window.SetInputMode(glfw.StickyKeysMode, gl.TRUE)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
-	//glfw.SwapInterval(0)
+	glfw.SwapInterval(0)
 	return window, nil
 }

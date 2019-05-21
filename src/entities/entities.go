@@ -1,10 +1,9 @@
 package entities
 
 import (
+	"github.com/go-gl/mathgl/mgl64"
 	"graphics"
 	"math"
-
-	"github.com/go-gl/mathgl/mgl64"
 )
 
 type Transform struct {

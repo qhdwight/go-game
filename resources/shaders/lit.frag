@@ -1,6 +1,6 @@
 #version 410
 
-in vec3 transformedNorm, fragPos;
+in vec3 fragPos, transformedNorm;
 
 out vec4 fragColor;
 

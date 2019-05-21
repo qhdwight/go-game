@@ -24,7 +24,7 @@ type Program struct {
 
 func NewProgram(shaders []*Shader) (*Program, error) {
 	handle := gl.CreateProgram()
-	program := Program{Handle: handle}
+	program := &Program{Handle: handle}
 	for _, shader := range shaders {
 		gl.AttachShader(handle, shader.Handle)
 	}
@@ -42,7 +42,7 @@ func NewProgram(shaders []*Shader) (*Program, error) {
 	for _, shader := range shaders {
 		gl.DetachShader(handle, shader.Handle)
 	}
-	return &program, nil
+	return program, nil
 }
 
 func CompileShaderFromPath(path string, shaderType uint32) (*Shader, error) {
