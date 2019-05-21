@@ -6,6 +6,7 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl64"
 	"graphics"
+	"math"
 	"runtime"
 )
 
@@ -20,48 +21,91 @@ const (
 )
 
 var (
-	cube = []float32{
-		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
-		0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
-		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-		-0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+	cubeNorms = []float32{
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
 
-		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
-		0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
-		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-		-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
 
-		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
-		-0.5, 0.5, -0.5, -1.0, 0.0, 0.0,
-		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
-		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
-		-0.5, -0.5, 0.5, -1.0, 0.0, 0.0,
-		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
 
-		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
-		0.5, 0.5, -0.5, 1.0, 0.0, 0.0,
-		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
-		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
-		0.5, -0.5, 0.5, 1.0, 0.0, 0.0,
-		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
 
-		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
-		0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
-		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-		-0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
 
-		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
-		0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
-		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-		-0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+	}
+	cubeVerts = []float32{
+		-0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
+		-0.5, 0.5, -0.5,
+		-0.5, -0.5, -0.5,
+
+		-0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		-0.5, 0.5, 0.5,
+		-0.5, -0.5, 0.5,
+
+		-0.5, 0.5, 0.5,
+		-0.5, 0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		-0.5, -0.5, 0.5,
+		-0.5, 0.5, 0.5,
+
+		0.5, 0.5, 0.5,
+		0.5, 0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, 0.5,
+		0.5, 0.5, 0.5,
+
+		-0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+		-0.5, -0.5, 0.5,
+		-0.5, -0.5, -0.5,
+
+		-0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		-0.5, 0.5, 0.5,
+		-0.5, 0.5, -0.5,
 	}
 	ents     []*entities.Entity
 	shaders  []*graphics.Shader
@@ -83,8 +127,6 @@ func main() {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
-	//defer gl.DeleteVertexArrays(1, &vao)
-	//defer gl.DeleteBuffers(1, &vbo)
 	vertShader, err := newShader(vertPath, gl.VERTEX_SHADER)
 	if err != nil {
 		panic(err)
@@ -99,6 +141,7 @@ func main() {
 	}
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
+	gl.ClearColor(0.0, 0.0, 0.2, 1.0)
 	modelUniform, err := prog.GetUniformLocation("model")
 	viewUniform, err := prog.GetUniformLocation("view")
 	projUniform, err := prog.GetUniformLocation("projection")
@@ -106,7 +149,29 @@ func main() {
 	viewPosUniform, err := prog.GetUniformLocation("viewPos")
 	lightColorUniform, err := prog.GetUniformLocation("lightColor")
 	objectColorUniform, err := prog.GetUniformLocation("objectColor")
-	player := entities.Player{VisualEntity: entities.VisualEntity{Entity: entities.Entity{Transform: entities.Transform{Pos: mgl64.Vec3{4, 3, 3}}}}}
+	cubeModel := graphics.Model{
+		Verts: cubeVerts,
+		Norms: cubeNorms,
+	}
+	cubeModel.Init()
+	player := entities.Player{
+		VisualEntity: entities.VisualEntity{
+			Entity: entities.Entity{
+				Transform: entities.Transform{
+					Pos: mgl64.Vec3{0, 0, 0},
+				},
+			},
+		},
+	}
+	makeCube := func(x, y, z float64) entities.VisualEntity {
+		return entities.VisualEntity{
+			Transform: entities.Transform{
+				Pos: mgl64.Vec3{x, y, z},
+			},
+			Model: &cubeModel,
+		}
+	}
+	cubes := []entities.VisualEntity{makeCube(0, -2, 0), makeCube(2, -3, 1)}
 	ents = append(ents, &player.VisualEntity.Entity)
 	cam := graphics.MakeCamera(fov, width, height)
 	lastRenderTime := 0.0
@@ -114,20 +179,19 @@ func main() {
 		if window.GetKey(glfw.KeyEscape) == glfw.Press {
 			window.SetShouldClose(true)
 		}
-		now := glfw.GetTime()
-		delta := now - lastRenderTime
-		lastRenderTime = now
+		time := glfw.GetTime()
+		delta := time - lastRenderTime
+		lastRenderTime = time
 		mouseX, mouseY := window.GetCursorPos()
 		window.SetCursorPos(width/2.0, height/2.0)
 		player.VisualEntity.Entity.AddInput((mouseX-width/2.0)*lookSens, (height/2.0-mouseY)*lookSens)
-		transform := &player.VisualEntity.Transform
-		fwd, right, up := entities.CalcRelVecs(transform.Pitch, transform.Yaw)
+		playerTransform := &player.VisualEntity.Entity.Transform
+		fwd, right, up := entities.CalcRelVecs(playerTransform.Pitch, playerTransform.Yaw)
 		moveOpt := func(key glfw.Key, vec mgl64.Vec3) {
 			if window.GetKey(key) == glfw.Press {
-				transform.Pos = transform.Pos.Add(vec.Mul(delta * speed))
+				playerTransform.Pos = playerTransform.Pos.Add(vec.Mul(delta * speed))
 			}
 		}
-		mgl64.HomogRotate3D()
 		moveOpt(glfw.KeyW, fwd)
 		moveOpt(glfw.KeyS, fwd.Mul(-1))
 		moveOpt(glfw.KeyD, right)
@@ -135,20 +199,22 @@ func main() {
 		worldUp := mgl64.Vec3{0, 1, 0}
 		moveOpt(glfw.KeyLeftShift, worldUp)
 		moveOpt(glfw.KeyLeftControl, worldUp.Mul(-1))
-		viewMat := mgl64.LookAtV(transform.Pos, transform.Pos.Add(fwd), up)
-		modelMat := mgl64.Ident4()
+		viewMat := mgl64.LookAtV(playerTransform.Pos, playerTransform.Pos.Add(fwd), up)
+		//modelMat := mgl64.Ident4()
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(prog.Handle)
 		graphics.SetUniformMat4(projUniform, cam.ProjMat)
 		graphics.SetUniformMat4(viewUniform, viewMat)
-		graphics.SetUniformMat4(modelUniform, modelMat)
-		graphics.SetUniformVec3(lightPosUniform, mgl64.Vec3{1.3, 1.4, 1.2})
-		graphics.SetUniformVec3(viewPosUniform, transform.Pos)
+		graphics.SetUniformVec3(lightPosUniform, mgl64.Vec3{math.Cos(time) * 2, math.Sin(time) * math.Cos(time) * 2, math.Sin(time) * 2})
+		graphics.SetUniformVec3(viewPosUniform, playerTransform.Pos)
 		graphics.SetUniformVec3(lightColorUniform, mgl64.Vec3{1, 1, 1})
 		graphics.SetUniformVec3(objectColorUniform, mgl64.Vec3{1, 0.2, 0.2})
-		gl.BindVertexArray(vertArray)
-		gl.BindVertexArray(normArray)
-		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(cube)/3))
+		for _, cube := range cubes {
+			modelMat := mgl64.Translate3D(cube.Transform.Pos.Elem())
+			graphics.SetUniformMat4(modelUniform, modelMat)
+			cube.Model.BindVertexArray()
+			gl.DrawArrays(gl.TRIANGLES, 0, int32(len(cubeVerts)/3))
+		}
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}

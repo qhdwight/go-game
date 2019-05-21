@@ -7,15 +7,17 @@ import (
 )
 
 type Model struct {
-	verts, norms []float32
+	Verts, Norms                     []float32
 	vertArrayHandle, normArrayHandle uint32
 }
 
-func (model *Model) Bind() {
-	makeBuffer(model.verts)
-	makeBuffer(model.norms)
+func (model *Model) Init() {
+	vertBufHandle := makeBuffer(model.Verts)
+	normBufHandle := makeBuffer(model.Norms)
 	model.vertArrayHandle = makeVertexArray()
 	model.normArrayHandle = makeVertexArray()
+	bindVertexArrayToBuffer(0, vertBufHandle, 0, nil)
+	bindVertexArrayToBuffer(1, normBufHandle, 0, nil)
 }
 
 func makeBuffer(data []float32) uint32 {
@@ -33,7 +35,13 @@ func makeVertexArray() uint32 {
 	return vertexArray
 }
 
-func bindVertexArrayToBuffer(index uint32, stride int32, pointer unsafe.Pointer) {
-	gl.VertexAttribPointer(index, 3, gl.FLOAT, false, stride, pointer)
+func (model *Model) BindVertexArray() {
+	gl.BindVertexArray(model.vertArrayHandle)
+	gl.BindVertexArray(model.normArrayHandle)
+}
+
+func bindVertexArrayToBuffer(index, buffer uint32, stride int32, pointer unsafe.Pointer) {
 	gl.EnableVertexAttribArray(index)
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.VertexAttribPointer(index, 3, gl.FLOAT, false, stride, pointer)
 }

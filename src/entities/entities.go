@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"graphics"
 	"math"
 
 	"github.com/go-gl/mathgl/mgl64"
@@ -21,6 +22,7 @@ type Entity struct {
 
 type VisualEntity struct {
 	Entity    Entity
+	Model     *graphics.Model
 	Transform Transform
 }
 
