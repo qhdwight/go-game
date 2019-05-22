@@ -10,6 +10,10 @@ type Model struct {
 	vertArrayHandle, normArrayHandle uint32
 }
 
+func (model *Model) GetNorms() []float32 {
+	return model.norms
+}
+
 func NewModel(verts, norms []float32) *Model {
 	model := &Model{verts: verts, norms: norms}
 	vertBufHandle := makeBuffer(verts)

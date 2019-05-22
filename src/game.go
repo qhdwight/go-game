@@ -223,7 +223,7 @@ func main() {
 			modelMat := translateMat.Mul4(rotMat)
 			graphics.SetUniformMat4(modelUniform, modelMat)
 			visual.Model.BindVertexArray()
-			gl.DrawArrays(gl.TRIANGLES, 0, int32(len(cubeVerts)/3))
+			gl.DrawArrays(gl.TRIANGLES, 0, int32(len(visual.Model.GetNorms())/3))
 		}
 		window.SwapBuffers()
 		glfw.PollEvents()
