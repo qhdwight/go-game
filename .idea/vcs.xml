@@ -2,9 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/src/github.com/go-gl/gl" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/src/github.com/go-gl/glfw" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/src/github.com/go-gl/mathgl" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/src/golang.org/x/image" vcs="Git" />
   </component>
 </project>

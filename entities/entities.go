@@ -1,8 +1,8 @@
 package entities
 
 import (
-	graphics2 "biomquest/graphics"
 	"github.com/go-gl/mathgl/mgl64"
+	"github.com/qhdwight/biomequest/graphics"
 	"math"
 )
 
@@ -21,7 +21,7 @@ type Entity struct {
 
 type VisualEntity struct {
 	Entity    Entity
-	Model     *graphics2.Model
+	Model     *graphics.Model
 	Transform Transform
 }
 

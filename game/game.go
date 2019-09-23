@@ -1,13 +1,12 @@
-package main
+package game
 
 import (
-	"biomquest/entities"
-	"biomquest/graphics"
 	"github.com/go-gl/gl/v4.6-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl64"
+	"github.com/qhdwight/biomequest/entities"
+	"github.com/qhdwight/biomequest/graphics"
 	"math"
-	"runtime"
 )
 
 const (
@@ -112,11 +111,7 @@ var (
 	programs []*graphics.Program
 )
 
-func init() {
-	runtime.LockOSThread()
-}
-
-func main() {
+func Start() {
 	if err := initGlfw(); err != nil {
 		panic(err)
 	}
@@ -272,7 +267,7 @@ func newProgram(shaders ...*graphics.Shader) (*graphics.Program, error) {
 }
 
 func initWindow() (*glfw.Window, error) {
-	window, err := glfw.CreateWindow(width, height, "test", nil, nil)
+	window, err := glfw.CreateWindow(width, height, "Biomes", nil, nil)
 	if err != nil {
 		return nil, err
 	}
