@@ -1,7 +1,7 @@
 package game
 
 import (
-	"github.com/go-gl/gl/v4.6-core/gl"
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl64"
 	"github.com/qhdwight/biomequest/entities"
@@ -267,7 +267,7 @@ func newProgram(shaders ...*graphics.Shader) (*graphics.Program, error) {
 }
 
 func initWindow() (*glfw.Window, error) {
-	window, err := glfw.CreateWindow(width, height, "Biomes", nil, nil)
+	window, err := glfw.CreateWindow(width, height, "Biomequest", nil, nil)
 	if err != nil {
 		return nil, err
 	}
