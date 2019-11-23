@@ -4,8 +4,8 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl64"
-	"github.com/qhdwight/biomequest/entities"
-	"github.com/qhdwight/biomequest/graphics"
+	"github.com/qhdwight/go-game/entities"
+	"github.com/qhdwight/go-game/graphics"
 	"math"
 )
 
@@ -156,8 +156,10 @@ func Start() {
 	}
 	makeCube := func(x, y, z float64) entities.VisualEntity {
 		return entities.VisualEntity{
-			Transform: entities.Transform{
-				Pos: mgl64.Vec3{x, y, z},
+			Entity: entities.Entity{
+				Transform: entities.Transform{
+					Pos: mgl64.Vec3{x, y, z},
+				},
 			},
 			Model: cubeModel,
 		}
@@ -185,8 +187,8 @@ func Start() {
 		lastRenderTime = time
 		mouseX, mouseY := window.GetCursorPos()
 		window.SetCursorPos(width/2.0, height/2.0)
-		player.VisualEntity.Entity.AddInput((mouseX-width/2.0)*lookSens, (height/2.0-mouseY)*lookSens)
-		playerTransform := &player.VisualEntity.Entity.Transform
+		player.AddInput((mouseX-width/2.0)*lookSens, (height/2.0-mouseY)*lookSens)
+		playerTransform := &player.Transform
 		fwd, right, up := entities.CalcRelVecs(playerTransform.Pitch, playerTransform.Yaw)
 		moveOpt := func(key glfw.Key, vec mgl64.Vec3) {
 			if window.GetKey(key) == glfw.Press {
@@ -267,7 +269,7 @@ func newProgram(shaders ...*graphics.Shader) (*graphics.Program, error) {
 }
 
 func initWindow() (*glfw.Window, error) {
-	window, err := glfw.CreateWindow(width, height, "Biomequest", nil, nil)
+	window, err := glfw.CreateWindow(width, height, "Game", nil, nil)
 	if err != nil {
 		return nil, err
 	}

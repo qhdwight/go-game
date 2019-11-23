@@ -2,7 +2,7 @@ package entities
 
 import (
 	"github.com/go-gl/mathgl/mgl64"
-	"github.com/qhdwight/biomequest/graphics"
+	"github.com/qhdwight/go-game/graphics"
 	"math"
 )
 
@@ -20,13 +20,12 @@ type Entity struct {
 }
 
 type VisualEntity struct {
-	Entity    Entity
-	Model     *graphics.Model
-	Transform Transform
+	Entity
+	Model *graphics.Model
 }
 
 type Player struct {
-	VisualEntity VisualEntity
+	VisualEntity
 }
 
 func CalcRelVecs(pitch, yaw float64) (mgl64.Vec3, mgl64.Vec3, mgl64.Vec3) {

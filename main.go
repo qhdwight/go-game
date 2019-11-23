@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/qhdwight/biomequest/game"
+	"github.com/qhdwight/go-game/game"
 	"runtime"
 )
 

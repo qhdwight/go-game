@@ -1,4 +1,4 @@
-module github.com/qhdwight/biomequest
+module github.com/qhdwight/go-game
 
 go 1.13.3
 
