@@ -175,7 +175,7 @@ func Start() {
 			}
 		}
 	}
-	ents = append(ents, &player.VisualEntity.Entity)
+	ents = append(ents, &player.Entity)
 	cam := graphics.MakeCamera(fov, width, height)
 	lastRenderTime := 0.0
 	for !window.ShouldClose() {
